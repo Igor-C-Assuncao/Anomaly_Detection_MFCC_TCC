@@ -40,7 +40,7 @@ This implementation is inspired by the research paper:
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-repo/mimii-wae.git
+   git clone https://github.com/Igor-C-Assuncao/Anomaly_Detection_MFCC_TCC
    cd mimii-wae
    ```
 
@@ -61,7 +61,7 @@ This implementation is inspired by the research paper:
 ### 1. Preprocessing the Data
 Run the preprocessing script to convert `.wav` files into normalized MFCC cycles:
 ```bash
-python \MTSA\preprocessing_mimii.py
+python \mtsa\preprocessing_mimii.py
 ```
 
 ### 2. Training the Model
