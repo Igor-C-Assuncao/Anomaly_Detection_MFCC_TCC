@@ -70,26 +70,26 @@ def main(args):
         test_cycles = list(range(len(pkl.load(test_file))))
 
     # Combinar critic scores e reconstruction losses
-    combine_critic_reconstruction = []
-    for x in range(1, len(test_critic) + 1):
-        critic_slice = test_critic[:x]
-        if len(critic_slice) > 1:  # Verifica se há elementos suficientes para calcular o zscore
-            zscore_value = np.nan_to_num(zscore(critic_slice, ddof=1)[-1])
-        else:
-            zscore_value = 0  # Define um valor padrão se não for possível calcular o zscore
-        combine_critic_reconstruction.append(np.abs(zscore_value) * test_losses[x - 1])
-    combine_critic_reconstruction = np.array(combine_critic_reconstruction)
+    # combine_critic_reconstruction = []
+    # for x in range(1, len(test_critic) + 1):
+    #     critic_slice = test_critic[:x]
+    #     if len(critic_slice) > 1:  # Verifica se há elementos suficientes para calcular o zscore
+    #         zscore_value = np.nan_to_num(zscore(critic_slice, ddof=1)[-1])
+    #     else:
+    #         zscore_value = 0  # Define um valor padrão se não for possível calcular o zscore
+    #     combine_critic_reconstruction.append(np.abs(zscore_value) * test_losses[x - 1])
+    # combine_critic_reconstruction = np.array(combine_critic_reconstruction)
 
-    # Detectar falhas
-    anom_threshold = calculate_anomaly_threshold(combine_critic_reconstruction, multiplier=args.iqr_multiplier)
-    binary_output = np.array(combine_critic_reconstruction > anom_threshold, dtype=int)
-    failures = detect_failures(binary_output)
+    # # Detectar falhas
+    # anom_threshold = calculate_anomaly_threshold(combine_critic_reconstruction, multiplier=args.iqr_multiplier)
+    # binary_output = np.array(combine_critic_reconstruction > anom_threshold, dtype=int)
+    # failures = detect_failures(binary_output)
 
-    # Converter falhas em intervalos de ciclos
-    failure_intervals = failure_list_to_interval(test_cycles, failures)
-    print("Intervalos de falhas detectados:")
-    for interval in failure_intervals:
-        print(f"Ciclo {interval[0]} até Ciclo {interval[1]}")
+    # # Converter falhas em intervalos de ciclos
+    # failure_intervals = failure_list_to_interval(test_cycles, failures)
+    # print("Intervalos de falhas detectados:")
+    # for interval in failure_intervals:
+    #     print(f"Ciclo {interval[0]} até Ciclo {interval[1]}")
 
     # Plotar erros de reconstrução
     plt.subplot(1, 2, 1)

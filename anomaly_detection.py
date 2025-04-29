@@ -20,8 +20,8 @@ def main(args):
         print(f"Erro ao carregar arquivo de resultados: {e}")
         return
 
-    train_errors = np.array(results['train'], dtype=float)
-    test_errors = np.array(results['test'], dtype=float)
+    train_errors = np.array(results['train']['reconstruction'], dtype=float)
+    test_errors = np.array(results['train']['reconstruction'], dtype=float)
 
     limiar = calculate_anomaly_threshold(train_errors, multiplier=args.iqr_multiplier)
     anomalies = np.where(test_errors > limiar)[0]
