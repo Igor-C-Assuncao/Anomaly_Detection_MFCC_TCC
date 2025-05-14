@@ -154,9 +154,10 @@ def predict(args, test_tensors, tqdm_desc):
 def offline_train(args):
     print(f"Starting offline training")
 
-    with open(f"{args.data_folder}final_train_tensors_{args.FEATS}.pkl", "rb") as tensor_pkl:
-        train_tensors = pkl.load(tensor_pkl)
-        train_tensors = [tensor.to(args.device) for tensor in train_tensors]
+    print(f"Offline training: loading data from {args.train_data_path}")
+    with open(args.train_data_path, "rb") as tensor_pkl:
+        train_tensors_np = pkl.load(tensor_pkl)
+        train_tensors = [th.tensor(tensor_np, dtype=th.float32).to(args.device) for tensor_np in train_tensors_np]
 
     loss_over_time = train_model(train_tensors,
                                  epochs=args.EPOCHS,
@@ -174,9 +175,9 @@ def offline_train(args):
 
 def calculate_train_losses(args):
 
-    with open(f"{args.data_folder}final_train_tensors_{args.FEATS}.pkl", "rb") as tensor_pkl:
-        train_tensors = pkl.load(tensor_pkl)
-        train_tensors = [tensor.to(args.device) for tensor in train_tensors]
+    with open(args.train_data_path, "rb") as tensor_pkl:
+        train_tensors_np = pkl.load(tensor_pkl)
+        train_tensors = [th.tensor(tensor_np, dtype=th.float32).to(args.device) for tensor_np in train_tensors_np]
 
     reconstruction_error, critic_scores = predict(args, train_tensors, "Calculating training error distribution")
     args.train_reconstruction_errors = reconstruction_error
@@ -186,9 +187,9 @@ def calculate_train_losses(args):
 
 def calculate_test_losses(args):
 
-    with open(f"{args.data_folder}final_test_tensors_{args.FEATS}.pkl", "rb") as tensor_pkl:
-        test_tensors = pkl.load(tensor_pkl)
-        test_tensors = [tensor.to(args.device) for tensor in test_tensors]
+    with open(args.test_data_path, "rb") as tensor_pkl:
+        test_tensors_np = pkl.load(tensor_pkl)
+        test_tensors = [th.tensor(tensor_np, dtype=th.float32).to(args.device) for tensor_np in test_tensors_np]
 
     reconstruction_errors, critic_scores = predict(args, test_tensors, "Testing on new data")
 
@@ -204,7 +205,7 @@ def calculate_test_losses(args):
 
 
 def load_parameters(arguments):
-    FEATS_TO_NUMBER = {"analog_feats": 8, "digital_feats": 8, "all_feats": 16}
+    FEATS_TO_NUMBER = {"analog_feats": 8, "digital_feats": 8, "all_feats": 313}
 
     arguments.device = th.device('cuda' if th.cuda.is_available() else 'cpu')
 
@@ -212,14 +213,21 @@ def load_parameters(arguments):
     arguments.NUMBER_FEATURES = FEATS_TO_NUMBER[arguments.FEATS]
 
     arguments.results_folder = "results/"
-    arguments.data_folder = "data/"
+    arguments.data_folder = "Data/preprocessed_mimii/"
+
+    arguments.train_data_path = os.path.join(arguments.data_folder, f"{arguments.machine_type}_{arguments.machine_id}_train_cycles.pkl")
+    arguments.test_data_path = os.path.join(arguments.data_folder, f"{arguments.machine_type}_{arguments.machine_id}_test_cycles.pkl")
+    
+    
+    if not os.path.exists(arguments.train_data_path): print(f"Warning: {arguments.train_data_path} not found")
+    if not os.path.exists(arguments.test_data_path): print(f"Warning: {arguments.test_data_path} not found")
 
     arguments.model_string = lambda model: f"{model}_{arguments.MODEL_NAME}_{arguments.FEATS}_{arguments.EMBEDDING}_{arguments.LSTM_LAYERS}_{arguments.WAE_regularization_term}"
 
     print(f"Starting execution of model: {arguments.model_string('WAE')}")
 
-    arguments.results_string = lambda loop_no: f"{arguments.results_folder}final_{loop_no}_losses_{arguments.model_string('WAE')}_{arguments.EPOCHS}_{arguments.LR}_{arguments.disc_lr}.pkl"
-    arguments.model_saving_string = lambda model: f"{arguments.results_folder}final_offline_{arguments.model_string(model)}_{arguments.EPOCHS}_{arguments.LR}_{arguments.disc_lr}.pt"
+    arguments.results_string = lambda loop_no: f"{arguments.results_folder}final_{loop_no}_losses_{arguments.model_string('WAE')}_{arguments.machine_type}_{arguments.machine_id}_{arguments.EPOCHS}_{arguments.LR}_{arguments.disc_lr}.pkl"
+    arguments.model_saving_string = lambda model: f"{arguments.results_folder}final_offline_{arguments.model_string(model)}_{arguments.machine_type}_{arguments.machine_id}_{arguments.EPOCHS}_{arguments.LR}_{arguments.disc_lr}.pt"
 
     arguments.decoder = Decoder(arguments.EMBEDDING,
                                 arguments.NUMBER_FEATURES,

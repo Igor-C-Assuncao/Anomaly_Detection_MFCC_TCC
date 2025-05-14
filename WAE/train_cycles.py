@@ -114,7 +114,7 @@ def calculate_test_losses(model, args):
 
 
 def load_parameters(arguments):
-
+    # *** CHANGE: all freats 313 ***
     FEATS_TO_NUMBER = {"analog_f6eats": 8, "digital_feats": 8, "all_feats": 313} 
 
     arguments.device = th.device('cuda' if th.cuda.is_available() else 'cpu')
@@ -130,7 +130,7 @@ def load_parameters(arguments):
     arguments.train_data_path = os.path.join(data_base_path, f"{arguments.machine_type}_{arguments.machine_id}_train_cycles.pkl")
     arguments.test_data_path = os.path.join(data_base_path, f"{arguments.machine_type}_{arguments.machine_id}_test_cycles.pkl")
     
-    #new 
+    
     if not os.path.exists(arguments.train_data_path): print(f"Warning: {arguments.train_data_path} not found")
     if not os.path.exists(arguments.test_data_path): print(f"Warning: {arguments.test_data_path} not found")
 
@@ -142,9 +142,10 @@ def load_parameters(arguments):
         arguments.model_string = f"{arguments.MODEL_NAME}_{arguments.FEATS}_{arguments.EMBEDDING}_{arguments.LSTM_LAYERS}"
 
    
+    # *** CHANGE: f"{arguments.results_folder}final_{loop_no}_losses_{arguments.model_string}_{arguments.machine_type}_{arguments.machine_id}_{arguments.EPOCHS}_{arguments.LR}.pkl" ***
     os.makedirs(arguments.results_folder, exist_ok=True)
-    arguments.results_string = lambda loop_no: f"{arguments.results_folder}final_{loop_no}_losses_{arguments.model_string}_{arguments.EPOCHS}_{arguments.LR}.pkl"
-    arguments.model_saving_string = f"{arguments.results_folder}final_offline_{arguments.model_string}_{arguments.EPOCHS}_{arguments.LR}.pt"
+    arguments.results_string = lambda loop_no: f"{arguments.results_folder}final_{loop_no}_losses_{arguments.model_string}_{arguments.machine_type}_{arguments.machine_id}_{arguments.EPOCHS}_{arguments.LR}.pkl"
+    arguments.model_saving_string = f"{arguments.results_folder}final_offline_{arguments.model_string}_{arguments.machine_type}_{arguments.machine_id}_{arguments.EPOCHS}_{arguments.LR}.pt"
 
     return arguments
 

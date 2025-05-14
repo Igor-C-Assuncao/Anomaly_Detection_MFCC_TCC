@@ -78,10 +78,10 @@ def generate_intervals(granularity, start_timestamp, end_timestamp):
     return interval_list
 
 
-with open("data/training_chunk_dates.pkl", "rb") as chunk_dates_file:
+with open("Data/preprocessed_mimii/valve_id_02_train_cycles.pkl", "rb") as chunk_dates_file:
     training_chunk_dates = pkl.load(chunk_dates_file)
 
-with open("data/test_chunk_dates.pkl", "rb") as chunk_dates_file:
+with open("Data/preprocessed_mimii/valve_id_02_test_cycles.pkl", "rb") as chunk_dates_file:
     test_chunk_dates = pkl.load(chunk_dates_file)
 
 
@@ -99,7 +99,7 @@ test_chunks_to_intervals = map_cycles_to_intervals(test_intervals, test_chunk_da
 
 alpha = 0.05
 
-with open("results/final_complete_losses_tcn_ae_analog_feats_4_10_30_3_100_0.001.pkl", "rb") as loss_file:
+with open("results/final_complete_losses_WAE_LSTMDiscriminator_all_feats_4_7_10.0_valve_id_02_100_0.001_0.001.pkl", "rb") as loss_file:
     tl = pkl.load(loss_file)
     test_losses = tl["test"]
     train_losses = tl["train"]

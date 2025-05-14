@@ -1,9 +1,11 @@
 import os
 import pickle as pkl
+import pandas as pd
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
-from mtsa.utils import files_train_test_split, Wav2Array
+from mtsa.utils import files_train_test_split, Wav2Array ,get_files_from_path
 from mtsa.features.mel import Array2Mfcc
+from sklearn.model_selection import train_test_split
 
 def preprocess_mimii_data(data_dir, output_dir):
     """
@@ -37,11 +39,24 @@ def preprocess_mimii_data(data_dir, output_dir):
             print(f"Processing {machine_type}/{machine_id}...")
 
             # Split train and test data
-            X_train, X_test , y_train , y_test = files_train_test_split(id_path)
+            # X_train, X_test , y_train , y_test = files_train_test_split(id_path)
+
+            
+            normal = get_files_from_path(os.path.join(id_path, "normal"))
+            abnormal = get_files_from_path(os.path.join(id_path, "abnormal"))
+
+            X_train, X_test  =  train_test_split(normal, test_size=0.2, random_state=42)
+
+            X_test = list(X_test) + list(abnormal)
+
+
+
+
 
             # Convert .wav files to arrays
             train_arrays = wav2array.transform(X_train)
             test_arrays = wav2array.transform(X_test)
+            
 
 
             # Convert arrays to MFCC
@@ -51,7 +66,7 @@ def preprocess_mimii_data(data_dir, output_dir):
             # Normalize the data
             scaler = MinMaxScaler()
             train_mfcc = scaler.fit_transform(train_mfcc.reshape(-1, train_mfcc.shape[-1])).reshape(train_mfcc.shape)
-            test_mfcc = scaler.transform(train_mfcc.reshape(-1, train_mfcc.shape[-1])).reshape(train_mfcc.shape)
+            test_mfcc = scaler.transform(test_mfcc.reshape(-1, test_mfcc.shape[-1])).reshape(test_mfcc.shape)
             # Generate cycles
             
             def generate_cycles(data): # Pass parameters

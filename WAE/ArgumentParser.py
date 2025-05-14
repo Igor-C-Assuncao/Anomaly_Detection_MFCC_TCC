@@ -65,7 +65,10 @@ def parse_arguments():
     parser.add_argument("-test_tensor")
     parser.add_argument("-use_discriminator", action="store_true")
 
-    parser.add_argument("-machine_type", dest="machine_type", type=str)
-    parser.add_argument("-machine_id", dest="machine_id", type=str) 
+
+    parser.add_argument("-machine_type", dest="machine_type")
+    parser.add_argument("-machine_id", dest="machine_id")
+
+
     args = parser.parse_args()
     return args
