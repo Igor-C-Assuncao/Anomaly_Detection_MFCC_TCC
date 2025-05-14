@@ -20,13 +20,16 @@ def main(args):
         print(f"Erro ao carregar arquivo de resultados: {e}")
         return
 
-    train_errors = np.array(results['train']['reconstruction'], dtype=float)
-    test_errors = np.array(results['train']['reconstruction'], dtype=float)
+
+    train_errors = np.array(results['train'], dtype=float)
+    test_errors = np.array(results['test'], dtype=float)
+
 
     limiar = calculate_anomaly_threshold(train_errors, multiplier=args.iqr_multiplier)
     anomalies = np.where(test_errors > limiar)[0]
     print(f"Anomalias detectadas: {len(anomalies)} em {len(test_errors)}")
     print(f"Limiar de Anomalia: {limiar:.6f} ")
+    
 
    
     plt.subplot(1, 2, 1)
@@ -40,6 +43,7 @@ def main(args):
    
     plt.subplot(1, 2, 2)
     plt.plot(test_errors, label="Teste Errors", color="blue")
+    plt.axhline(y=limiar, color="red", linestyle="--", label="Limiar de Anomalia")
     plt.title("Teste Errors com Anomalias")
     plt.xlabel("Índice")
     plt.ylabel("Perda")
