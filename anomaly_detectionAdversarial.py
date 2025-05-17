@@ -116,8 +116,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Anomaly Detection using WAE-GAN")
     parser.add_argument("--results_file", type=str, required=True, help="Path to the results file (.pkl)")
-    parser.add_argument("--train_data_path", type=str, required=True, help="Path to the train data file (.pkl)")
-    parser.add_argument("--test_data_path", type=str, required=True, help="Path to the test data file (.pkl)")
+  
     parser.add_argument("-iqr_multiplier", type=float, default=1.5, help="Multiplier for IQR to set the threshold")
 
     args = parser.parse_args()
