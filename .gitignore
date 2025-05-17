@@ -1,6 +1,9 @@
-Data/slider
 
-Data/valve
+
+Data/MIMII
+
+Data/preprocessed_mimii
+
 
 Data/MIMII
 
@@ -8,4 +11,6 @@ mtsa/examples
 
 WAE/results
 
+
 Data/
+
