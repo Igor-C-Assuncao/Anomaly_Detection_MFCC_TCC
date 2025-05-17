@@ -63,10 +63,38 @@ def preprocess_mimii_data(data_dir, output_dir):
             train_mfcc = array2mfcc.transform(train_arrays)
             test_mfcc = array2mfcc.transform(test_arrays)
 
+
+
             # Normalize the data
             scaler = MinMaxScaler()
-            train_mfcc = scaler.fit_transform(train_mfcc.reshape(-1, train_mfcc.shape[-1])).reshape(train_mfcc.shape)
-            test_mfcc = scaler.transform(test_mfcc.reshape(-1, test_mfcc.shape[-1])).reshape(test_mfcc.shape)
+            train_mfcc_transposed = np.transpose(train_mfcc, (0, 2, 1))
+            train_mfcc_reshaped = train_mfcc_transposed.reshape(-1, train_mfcc.shape[1])
+
+            scaler.fit(train_mfcc_reshaped)
+
+            train_mfcc_scaled_reshaped = scaler.transform(train_mfcc_reshaped)
+
+            train_mfcc_scaled_3d = train_mfcc_scaled_reshaped.reshape(train_mfcc.shape[0], train_mfcc.shape[2], train_mfcc.shape[1])
+            # Transpor de volta para o formato original (N, M, F)
+            train_mfcc_normalized = np.transpose(train_mfcc_scaled_3d, (0, 2, 1)) # Shape: (712, 20, 313)
+
+            # Normalizar dados de teste com o scaler treinado
+            test_mfcc_transposed = np.transpose(test_mfcc, (0, 2, 1))
+            test_mfcc_reshaped = test_mfcc_transposed.reshape(-1, test_mfcc.shape[1])
+
+            test_mfcc_scaled_reshaped = scaler.transform(test_mfcc_reshaped)
+
+            test_mfcc_scaled_3d = test_mfcc_scaled_reshaped.reshape(test_mfcc.shape[0], test_mfcc.shape[2], test_mfcc.shape[1])
+            test_mfcc_normalized = np.transpose(test_mfcc_scaled_3d, (0, 2, 1))
+
+            # Agora train_mfcc_normalized e test_mfcc_normalized estão normalizados por coeficiente MFCC
+            # e têm o shape original (N, M, F)
+            train_mfcc = train_mfcc_normalized
+            test_mfcc = test_mfcc_normalized
+
+           
+            
+            
             # Generate cycles
             
             def generate_cycles(data): # Pass parameters
