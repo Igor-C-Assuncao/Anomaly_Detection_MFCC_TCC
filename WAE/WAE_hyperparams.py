@@ -1,7 +1,7 @@
 import sys
 import os
 
-epochs = 100
+epochs = 10
 lrs = [0.001, 0.0001]
 disc_lr = [1, 0.5, 0.1]
 emb_size = 8
@@ -15,7 +15,10 @@ encdec_hidden_units = [6, 30]
 disc_layers = [1, 2, 3]
 disc_hidden = [6, 32]
 
-model = "lstm_ae"
+# model = "lstm_ae"
+
+model = "LSTMDiscriminator"
+# model = "ConvDiscriminator"
 
 feats = sys.argv[1]
 machine_type = sys.argv[2]
@@ -33,15 +36,15 @@ machine_id = sys.argv[3]
 # -tcn_hidden 30  -WAEreg 10 -force-training -dropout 0.3"
 
 
-# base_string = lambda discriminator_lr, disc_params, enc_dec_params, lr: f"python WAE/train_cycles_adversarial.py \
-# -encoder LSTM -decoder LSTM -use_discriminator -model {model} -embedding {emb_size} \
-# -epochs {epochs} -lr {lr}  -disc_lr {discriminator_lr} {disc_params} {enc_dec_params} -batch_size 64 -feats {feats} \
-# -machine_type {machine_type} -machine_id {machine_id} -hidden 30 -tcn_layers 10 \
-# -tcn_hidden 30 -WAEreg 10 -force-training -dropout 0.3"
+base_string = lambda discriminator_lr, disc_params, enc_dec_params, lr: f"python WAE/train_cycles_adversarial.py \
+-encoder LSTM -decoder LSTM -use_discriminator -model {model} -embedding {emb_size} \
+-epochs {epochs} -lr {lr}  -disc_lr {discriminator_lr} {disc_params} {enc_dec_params} -batch_size 64 -feats {feats} \
+-machine_type {machine_type} -machine_id {machine_id} -hidden 30 -tcn_layers 10 \
+-tcn_hidden 30 -WAEreg 10 -force-training -dropout 0.3"
 
-base_string = lambda discriminator_lr, disc_params, enc_dec_params, lr: f" python WAE/train_cycles.py \
--feats {feats} -encoder LSTM -decoder LSTM -model {model} -embedding {emb_size} -epochs {epochs} -lr {lr} -batch_size 64 \
--disc_lr {discriminator_lr} {disc_params} {enc_dec_params}  -machine_type {machine_type} -machine_id {machine_id} "
+# base_string = lambda discriminator_lr, disc_params, enc_dec_params, lr: f" python WAE/train_cycles.py \
+# -feats {feats} -encoder LSTM -decoder LSTM -model {model} -embedding {emb_size} -epochs {epochs} -lr {lr} -batch_size 64 \
+# -disc_lr {discriminator_lr} {disc_params} {enc_dec_params}  -machine_type {machine_type} -machine_id {machine_id} "
 
 
 

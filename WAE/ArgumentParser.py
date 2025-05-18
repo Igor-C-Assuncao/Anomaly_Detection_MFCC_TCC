@@ -34,7 +34,7 @@ def parse_arguments():
     parser.add_argument("-att_heads", dest="NHEADS", type=int, default=8,
                         help="Number of attention heads")
 
-    parser.add_argument("-feats", dest="FEATS", choices=["analog", "digital", "all", "noflow"], default="analog",
+    parser.add_argument("-feats", dest="FEATS", choices=["analog", "digital", "all", "noflow", "mimii_mfcc"], default="analog",
                         help="Which sensors to use")
 
     parser.add_argument("-SI", dest="successive_iters", type=int, default=10)
@@ -69,6 +69,19 @@ def parse_arguments():
     parser.add_argument("-machine_type", dest="machine_type")
     parser.add_argument("-machine_id", dest="machine_id")
 
+
+    parser.add_argument("-fold_id", dest="fold_id", type=int, default=None,
+                    help="Identifier for the cross-validation fold (0 to K-1). Default is None for no CV.")
+
+    parser.add_argument("-cv_data_base_dir", dest="cv_data_base_dir", type=str,
+                        default="Data/preprocessed_mimii_cv/",
+                        help="Base directory where CV fold data is stored.")
+
+    parser.add_argument("-cv_results_base_dir", dest="cv_results_base_dir", type=str,
+                        default="results_cv/", # Sugestão: salvar resultados da CV em uma pasta separada
+                        help="Base directory to save CV fold models and results.")
+
+    
 
     args = parser.parse_args()
     return args

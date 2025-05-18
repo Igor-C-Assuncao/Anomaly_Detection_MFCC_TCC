@@ -7,16 +7,18 @@ from mtsa.utils import Demux2Array, Wav2Array
 from mtsa.features.mel import Array2MelSpec
 from sklearn.pipeline import Pipeline
 from functools import reduce
-
-from keras.layers import Input, Conv2D, MaxPooling2D, UpSampling2D, BatchNormalization
-from keras.models import Model
-from keras import regularizers
+from keras.optimizers import Adam
+import time
 
 class AutoEncoderMixin(Model):
     def score_samples(self, X):
         return -1 * np.mean(np.square(X - self.predict(X))) 
-  
-  
+    
+    def fit(self, x=None, y=None, batch_size=None, epochs=50, verbose=0, callbacks=None, validation_split=0, validation_data=None, shuffle=True, class_weight=None, sample_weight=None, initial_epoch=0, steps_per_epoch=None, validation_steps=None, validation_batch_size=None, validation_freq=1, max_queue_size=10, workers=1, use_multiprocessing=True):
+        #TODO final_model__epochs
+        return super().fit(x=x, y=x, batch_size=batch_size, epochs=epochs, verbose=verbose, callbacks=callbacks, validation_split=validation_split, validation_data=validation_data, shuffle=shuffle, class_weight=class_weight, sample_weight=sample_weight, initial_epoch=initial_epoch, steps_per_epoch=steps_per_epoch, validation_steps=validation_steps, validation_batch_size=validation_batch_size, validation_freq=validation_freq)
+    
+       
 class Hitachi(BaseEstimator, OutlierMixin):
     """
     
@@ -36,6 +38,7 @@ class Hitachi(BaseEstimator, OutlierMixin):
                  mono=False,
                  epochs=50,
                  batch_size=512,
+                 learning_rate=1e-3, 
                  shuffle=True,
                  validation_split=0.1,
                  verbose=0
@@ -50,9 +53,11 @@ class Hitachi(BaseEstimator, OutlierMixin):
         self.mono = mono
         self.epochs=epochs
         self.batch_size=batch_size
+        self.learning_rate = learning_rate
         self.shuffle=shuffle
         self.validation_split=validation_split
         self.verbose=verbose
+        self.last_fit_time = 0
         self.model = self._build_model()
     
 
@@ -61,7 +66,9 @@ class Hitachi(BaseEstimator, OutlierMixin):
         return "Hitachi"
 
     def fit(self, X, y=None):
-        return self.model.fit(X, 
+        start = time.perf_counter()    
+        
+        self.model.fit(X, 
                               y,
                               final_model__batch_size=self.batch_size,
                               final_model__shuffle= self.shuffle,
@@ -69,6 +76,11 @@ class Hitachi(BaseEstimator, OutlierMixin):
                               final_model__epochs = self.epochs,
                               final_model__verbose = self.verbose
                               )
+        end = time.perf_counter()
+        self.last_fit_time = end - start
+        return self.last_fit_time #seconds
+        
+        
 
     def transform(self, X, y=None):
 
@@ -117,31 +129,16 @@ class Hitachi(BaseEstimator, OutlierMixin):
     def get_model(self):
         inputDim = self.n_mels * self.frames
         inputLayer = Input(shape=(inputDim,))
-        x = Conv2D(32, (3, 3), activation='relu', padding='same', kernel_regularizer=regularizers.l2(0.01))(inputLayer)
-        x = BatchNormalization()(x)
-        x = MaxPooling2D((2, 2), padding='same')(x)
-        x = Conv2D(16, (3, 3), activation='relu', padding='same', kernel_regularizer=regularizers.l2(0.01))(x)
-        x = BatchNormalization()(x)
-        x = MaxPooling2D((2, 2), padding='same')(x)
-        x = Conv2D(8, (3, 3), activation='relu', padding='same', kernel_regularizer=regularizers.l2(0.01))(x)
-        encoded = MaxPooling2D((2, 2), padding='same')(x)
-
-        # Decodificação
-        x = Conv2D(8, (3, 3), activation='relu', padding='same', kernel_regularizer=regularizers.l2(0.01))(encoded)
-        x = BatchNormalization()(x)
-        x = UpSampling2D((2, 2))(x)
-        x = Conv2D(16, (3, 3), activation='relu', padding='same', kernel_regularizer=regularizers.l2(0.01))(x)
-        x = BatchNormalization()(x)
-        x = UpSampling2D((2, 2))(x)
-        x = Conv2D(32, (3, 3), activation='relu', kernel_regularizer=regularizers.l2(0.01))(x)
-        x = BatchNormalization()(x)
-        x = UpSampling2D((2, 2))(x)
-        decoded = Conv2D(32, (3, 3), activation='sigmoid', padding='same')(decoded)
-        final_model = AutoEncoderMixin(inputs=inputLayer, outputs=x)
-        final_model.compile(optimizer='adam', loss='mean_squared_error', jit_compile=True)
+        h = Dense(64, activation="relu")(inputLayer)
+        h = Dense(64, activation="relu")(h)
+        h = Dense(8, activation="relu")(h)
+        h = Dense(64, activation="relu")(h)
+        h = Dense(64, activation="relu")(h)
+        h = Dense(inputDim, activation=None)(h)
+        final_model = AutoEncoderMixin(inputs=inputLayer, outputs=h)
+        optimizer = Adam(learning_rate=self.learning_rate)
+        final_model.compile(optimizer=optimizer, loss='mean_squared_error', jit_compile=True)
         return final_model
-
-
     
     def _build_model(self):
         wav2array = Wav2Array(
@@ -179,28 +176,19 @@ class HitachiDCASE2020(Hitachi):
     def get_model(self):
         inputDim = self.n_mels * self.frames
         inputLayer = Input(shape=(inputDim,))
-        x = Conv2D(32, (3, 3), activation='relu', padding='same', kernel_regularizer=regularizers.l2(0.01))(inputLayer)
-        x = BatchNormalization()(x)
-        x = MaxPooling2D((2, 2), padding='same')(x)
-        x = Conv2D(16, (3, 3), activation='relu', padding='same', kernel_regularizer=regularizers.l2(0.01))(x)
-        x = BatchNormalization()(x)
-        x = MaxPooling2D((2, 2), padding='same')(x)
-        x = Conv2D(8, (3, 3), activation='relu', padding='same', kernel_regularizer=regularizers.l2(0.01))(x)
-        encoded = MaxPooling2D((2, 2), padding='same')(x)
-
-        # Decodificação
-        x = Conv2D(8, (3, 3), activation='relu', padding='same', kernel_regularizer=regularizers.l2(0.01))(encoded)
-        x = BatchNormalization()(x)
-        x = UpSampling2D((2, 2))(x)
-        x = Conv2D(16, (3, 3), activation='relu', padding='same', kernel_regularizer=regularizers.l2(0.01))(x)
-        x = BatchNormalization()(x)
-        x = UpSampling2D((2, 2))(x)
-        x = Conv2D(32, (3, 3), activation='relu', kernel_regularizer=regularizers.l2(0.01))(x)
-        x = BatchNormalization()(x)
-        x = UpSampling2D((2, 2))(x)
-        decoded = Conv2D(32, (3, 3), activation='sigmoid', padding='same')(decoded)
-        final_model = AutoEncoderMixin(inputs=inputLayer, outputs=x)
-        final_model.compile(optimizer='adam', loss='mean_squared_error', jit_compile=True)
+        h = Dense(128, activation="relu")(inputLayer)
+        h = Dense(128, activation="relu")(h)
+        h = Dense(128, activation="relu")(h)
+        h = Dense(128, activation="relu")(h)
+        h = Dense(8, activation="relu")(h)
+        h = Dense(128, activation="relu")(inputLayer)
+        h = Dense(128, activation="relu")(h)
+        h = Dense(128, activation="relu")(h)
+        h = Dense(128, activation="relu")(h)
+        h = Dense(inputDim, activation="relu")(h)
+        final_model = AutoEncoderMixin(inputs=inputLayer, outputs=h)
+        optimizer = Adam(learning_rate=self.learning_rate)  
+        final_model.compile(optimizer=optimizer, loss='mean_squared_error')
         return final_model
     
 
