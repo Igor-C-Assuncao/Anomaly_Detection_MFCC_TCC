@@ -1,6 +1,6 @@
 from torch import nn
 import torch as th
-from torch.nn.utils.parametrizations import weight_norm
+from torch.nn.utils import weight_norm
 
 
 class Encoder(nn.Module):
