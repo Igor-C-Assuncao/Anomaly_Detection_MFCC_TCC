@@ -154,7 +154,7 @@ def predict(args, test_tensors, tqdm_desc):
 def offline_train(args):
     print(f"Starting offline training")
 
-    print(f"Offline training: loading data from {args.train_data_path}")
+    print(f"Offline training: loading data from {args.train_data_path} Fold {args.fold}")
     with open(args.train_data_path, "rb") as tensor_pkl:
         train_tensors_np = pkl.load(tensor_pkl)
         train_tensors = [th.tensor(tensor_np, dtype=th.float32).to(args.device) for tensor_np in train_tensors_np]
@@ -226,8 +226,14 @@ def load_parameters(arguments):
 
     print(f"Starting execution of model: {arguments.model_string('WAE')}")
 
-    arguments.results_string = lambda loop_no: f"{arguments.results_folder}final_{loop_no}_losses_{arguments.model_string('WAE')}_{arguments.machine_type}_{arguments.machine_id}_{arguments.EPOCHS}_{arguments.LR}_{arguments.disc_lr}.pkl"
-    arguments.model_saving_string = lambda model: f"{arguments.results_folder}final_offline_{arguments.model_string(model)}_{arguments.machine_type}_{arguments.machine_id}_{arguments.EPOCHS}_{arguments.LR}_{arguments.disc_lr}.pt"
+
+    # NORMAL USE
+    # arguments.results_string = lambda loop_no: f"{arguments.results_folder}final_{loop_no}_losses_{arguments.model_string('WAE')}_{arguments.machine_type}_{arguments.machine_id}_Fold{arguments.fold}_{arguments.EPOCHS}_{arguments.LR}_{arguments.disc_lr}.pkl"
+    
+    # K-FOLD USE
+    arguments.results_string = lambda loop_no: f"{arguments.results_folder}{arguments.machine_type}_{arguments.machine_id}_Fold{arguments.fold}.pkl"
+
+    arguments.model_saving_string = lambda model: f"{arguments.results_folder}final_offline_{arguments.model_string(model)}_{arguments.machine_type}_{arguments.machine_id}_Fold{arguments.fold}_{arguments.EPOCHS}_{arguments.LR}_{arguments.disc_lr}.pt"
 
     arguments.decoder = Decoder(arguments.EMBEDDING,
                                 arguments.NUMBER_FEATURES,

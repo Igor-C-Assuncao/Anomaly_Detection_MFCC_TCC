@@ -4,34 +4,16 @@ import pickle as pkl
 import matplotlib.pyplot as plt
 from scipy.stats import zscore
 import pandas as pd
+from sklearn.metrics import roc_auc_score, accuracy_score, precision_score, recall_score, f1_score
 
-def calculate_anomaly_threshold(train_errors, multiplier=3.0):
+def calculate_anomaly_threshold(train_errors, multiplier=1.5):
  
   q25, q75 = np.quantile(train_errors, [0.25, 0.75])
   return q75 + multiplier * (q75 - q25)
 
-def detect_failures(anom_indices):
-    failure_list = []
-    failure = set()
-    for i in range(len(anom_indices) - 1):
-        if anom_indices[i] >= 0.99 and anom_indices[i + 1] >= 0.99:
-            failure.add(i)
-            failure.add(i + 1)
-        elif len(failure) > 0:
-            failure_list.append(failure)
-            failure = set()
-    if len(failure) > 0:
-        failure_list.append(failure)
-    return failure_list
 
-def failure_list_to_interval(cycle_indices, failures):
-    failure_intervals = []
-    for failure in failures:
-        failure = sorted(failure)
-        start_cycle = cycle_indices[failure[0]]
-        end_cycle = cycle_indices[failure[-1]]
-        failure_intervals.append((start_cycle, end_cycle))
-    return failure_intervals
+
+
 
 def main(args):
     print(f"Carregando resultados de: {args.results_file}")
@@ -45,51 +27,82 @@ def main(args):
         print(f"Erro ao carregar arquivo de resultados: {e}")
         return
 
-    # Ajuste para acessar os dados gerados por train_cycles_adversarial
     train_losses = np.array(results['train']['reconstruction'], dtype=float)
     test_losses = np.array(results['test']['reconstruction'], dtype=float)
-    train_critic = np.array(results['train']['critic'], dtype=float)
-    test_critic = np.array(results['test']['critic'], dtype=float)
+    # train_critic = np.array(results['train']['critic'], dtype=float)
+    # test_critic = np.array(results['test']['critic'], dtype=float)
+ 
 
-    # Calcular medianas
-    median_train_losses = np.median(train_losses)
-    median_test_losses = np.median(test_losses)
-    median_train_critic = np.median(train_critic)
-    median_test_critic = np.median(test_critic)
+   
 
-    # Calcular limiar de anomalia
+    with open(args.test_labels_path, "rb") as labels_file:
+        test_labels = pkl.load(labels_file)
+
+ 
+
     limiar = calculate_anomaly_threshold(train_losses, multiplier=args.iqr_multiplier)
+   
     anomalies = np.where(test_losses > limiar)[0]
-    print(f"Anomalias detectadas: {len(anomalies)} em {len(test_losses)}")
+    truth_anomalies = np.where(np.array(test_labels) == 1)[0]
+    
+
+    
+    print(f"Anomalias detectadas: {len(anomalies)} em {len(truth_anomalies)} reais")
     print(f"Limiar de Anomalia: {limiar:.6f}")
+    
 
-    # Carregar ciclos diretamente como índices
-    with open(args.train_data_path, "rb") as train_file:
-        train_cycles = list(range(len(pkl.load(train_file))))
-    with open(args.test_data_path, "rb") as test_file:
-        test_cycles = list(range(len(pkl.load(test_file))))
+    
 
-    # Combinar critic scores e reconstruction losses
-    # combine_critic_reconstruction = []
-    # for x in range(1, len(test_critic) + 1):
-    #     critic_slice = test_critic[:x]
-    #     if len(critic_slice) > 1:  # Verifica se há elementos suficientes para calcular o zscore
-    #         zscore_value = np.nan_to_num(zscore(critic_slice, ddof=1)[-1])
-    #     else:
-    #         zscore_value = 0  # Define um valor padrão se não for possível calcular o zscore
-    #     combine_critic_reconstruction.append(np.abs(zscore_value) * test_losses[x - 1])
-    # combine_critic_reconstruction = np.array(combine_critic_reconstruction)
+    if len(test_labels) != len(test_losses):
+        min_len = min(len(test_labels), len(test_losses))
+        print(f"Aviso: Ajustando tamanho dos labels ({len(test_labels)}) e dos resultados ({len(test_losses)}) para {min_len}")
+        test_labels = test_labels[:min_len]
+        test_losses = test_losses[:min_len]
 
-    # # Detectar falhas
-    # anom_threshold = calculate_anomaly_threshold(combine_critic_reconstruction, multiplier=args.iqr_multiplier)
-    # binary_output = np.array(combine_critic_reconstruction > anom_threshold, dtype=int)
-    # failures = detect_failures(binary_output)
+    test_preds = (test_losses > limiar).astype(int)
 
-    # # Converter falhas em intervalos de ciclos
-    # failure_intervals = failure_list_to_interval(test_cycles, failures)
-    # print("Intervalos de falhas detectados:")
-    # for interval in failure_intervals:
-    #     print(f"Ciclo {interval[0]} até Ciclo {interval[1]}")
+
+    # Calcular métricas
+    roc_auc = roc_auc_score(test_labels, test_preds)
+    acc = accuracy_score(test_labels, test_preds)
+    prec = precision_score(test_labels, test_preds, zero_division=0)
+    rec = recall_score(test_labels, test_preds, zero_division=0)
+    f1 = f1_score(test_labels, test_preds, zero_division=0)
+
+    plt.figure(figsize=(12, 4))
+    plt.plot(test_labels, label="Rótulos Reais", marker='o', linestyle='-', alpha=0.7)
+    plt.plot(test_preds, label="Predições", marker='x', linestyle='--', alpha=0.7)
+    plt.title("Comparação: Rótulos Reais vs Predições")
+    plt.xlabel("Índice da Amostra")
+    plt.ylabel("Classe")
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig("labels_vs_preds.png")
+    plt.close()
+
+    
+
+    print(f"ROC-AUC: {roc_auc:.4f}")
+    print(f"Acurácia: {acc:.4f}")
+    print(f"Precisão: {prec:.4f}")
+    print(f"Recall: {rec:.4f}")
+    print(f"F1-score: {f1:.4f}")
+
+    # Salvar métricas para uso posterior
+    import re
+    match = re.search(r'results[\\/](.+?)_(.+?)_Fold(\d+)\.pkl', args.results_file)
+    if match:
+        machine_type, machine_id, fold = match.group(1), match.group(2), match.group(3)
+        metrics_file = f"results/{machine_type}_{machine_id}_Fold{fold}_metrics.pkl"
+        metrics_dict = {
+            "roc_auc": roc_auc,
+            "f1": f1,
+            "accuracy": acc,
+            "precision": prec,
+            "recall": rec
+        }
+        with open(metrics_file, "wb") as mf:
+            pkl.dump(metrics_dict, mf)
 
     # Plotar erros de reconstrução
     plt.subplot(1, 2, 1)
@@ -100,23 +113,24 @@ def main(args):
     plt.ylabel("Perda")
     plt.legend()
 
-    # Plotar erros de teste
     plt.subplot(1, 2, 2)
     plt.plot(test_losses, label="Teste Errors", color="blue")
+    plt.axhline(y=limiar, color="red", linestyle="--", label="Limiar de Anomalia")
     plt.title("Teste Errors com Anomalias")
     plt.xlabel("Ciclo")
     plt.ylabel("Perda")
     plt.legend()
 
-    plt.tight_layout()
-    plt.show()
+    # plt.tight_layout()
+    # plt.show()
+    plt.savefig("my_plot.png")
 
 if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="Anomaly Detection using WAE-GAN")
     parser.add_argument("--results_file", type=str, required=True, help="Path to the results file (.pkl)")
-  
+    parser.add_argument("--test_labels_path", type=str, required=True, help="Path to the test labels file (.pkl)")
     parser.add_argument("-iqr_multiplier", type=float, default=1.5, help="Multiplier for IQR to set the threshold")
 
     args = parser.parse_args()

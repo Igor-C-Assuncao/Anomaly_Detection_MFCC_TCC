@@ -70,7 +70,7 @@ def calculate_train_losses(model, args):
 
 def offline_train(model, args):
 
-    print(f"Starting offline training")
+    print(f"Starting offline training   Fold {args.fold} ")
     # *** CHANGE: Use the new train data path ***
     print(f"Offline training: loading data from {args.train_data_path}")
     with open(args.train_data_path, "rb") as tensor_pkl:
@@ -123,12 +123,20 @@ def load_parameters(arguments):
     arguments.NUMBER_FEATURES = FEATS_TO_NUMBER[arguments.FEATS]
 
  
+    # arguments.results_folder = "results/"
+    # data_base_path = "Data/mimi_prepr"
+
+    
+    # arguments.train_data_path = os.path.join(data_base_path, f"{arguments.machine_type}_{arguments.machine_id}_train_cycles.pkl")
+    # arguments.test_data_path = os.path.join(data_base_path, f"{arguments.machine_type}_{arguments.machine_id}_test_cycles.pkl")
+
+    # k-fold implementation 
     arguments.results_folder = "results/"
-    data_base_path = "Data/preprocessed_mimii/"
+    data_base_path = "temp_data/"
+    arguments.train_data_path = os.path.join(data_base_path, f"tmp_{arguments.machine_type}_{arguments.machine_id}_train.pkl")
+    arguments.test_data_path = os.path.join(data_base_path, f"tmp_{arguments.machine_type}_{arguments.machine_id}_test.pkl")
 
 
-    arguments.train_data_path = os.path.join(data_base_path, f"{arguments.machine_type}_{arguments.machine_id}_train_cycles.pkl")
-    arguments.test_data_path = os.path.join(data_base_path, f"{arguments.machine_type}_{arguments.machine_id}_test_cycles.pkl")
     
     
     if not os.path.exists(arguments.train_data_path): print(f"Warning: {arguments.train_data_path} not found")
@@ -144,9 +152,19 @@ def load_parameters(arguments):
    
     # *** CHANGE: f"{arguments.results_folder}final_{loop_no}_losses_{arguments.model_string}_{arguments.machine_type}_{arguments.machine_id}_{arguments.EPOCHS}_{arguments.LR}.pkl" ***
     os.makedirs(arguments.results_folder, exist_ok=True)
-    arguments.results_string = lambda loop_no: f"{arguments.results_folder}final_{loop_no}_losses_{arguments.model_string}_{arguments.machine_type}_{arguments.machine_id}_{arguments.EPOCHS}_{arguments.LR}.pkl"
-    arguments.model_saving_string = f"{arguments.results_folder}final_offline_{arguments.model_string}_{arguments.machine_type}_{arguments.machine_id}_{arguments.EPOCHS}_{arguments.LR}.pt"
 
+    
+    
+    
+    # arguments.results_string = lambda loop_no: f"{arguments.results_folder}final_{loop_no}_losses_{arguments.model_string}_{arguments.machine_type}_{arguments.machine_id}_{arguments.EPOCHS}_{arguments.LR}.pkl"
+    # arguments.model_saving_string = f"{arguments.results_folder}final_offline_{arguments.model_string}_{arguments.machine_type}_{arguments.machine_id}_{arguments.EPOCHS}_{arguments.LR}.pt"
+
+
+
+    # K-FOLD USE
+    arguments.results_string = lambda loop_no: f"{arguments.results_folder}{arguments.machine_type}_{arguments.machine_id}_Fold{arguments.fold}.pkl"
+    arguments.model_saving_string = f"{arguments.results_folder}final_offline_{arguments.model_string}_{arguments.machine_type}_{arguments.machine_id}_Fold{arguments.fold}_{arguments.EPOCHS}_{arguments.LR}.pt"
+   
     return arguments
 
 def main(arguments):

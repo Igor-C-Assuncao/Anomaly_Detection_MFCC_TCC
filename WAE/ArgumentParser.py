@@ -68,6 +68,7 @@ def parse_arguments():
 
     parser.add_argument("-machine_type", dest="machine_type")
     parser.add_argument("-machine_id", dest="machine_id")
+    parser.add_argument("-fold", dest="fold", type=int, default=0)
 
 
     args = parser.parse_args()

@@ -47,11 +47,14 @@ def preprocess_mimii_data(data_dir, output_dir):
 
             X_train, X_test  =  train_test_split(normal, test_size=0.2, random_state=42)
 
+            y_normal_test = [0] * len(X_test)  # Normal samples labeled as 1
+            y_abnormal_test = [1] * len(abnormal)  # Abnormal samples labeled as 0
+
+            y_test = y_normal_test + y_abnormal_test
+
             X_test = list(X_test) + list(abnormal)
 
-
-
-
+          
 
             # Convert .wav files to arrays
             train_arrays = wav2array.transform(X_train)
@@ -91,6 +94,8 @@ def preprocess_mimii_data(data_dir, output_dir):
             # e têm o shape original (N, M, F)
             train_mfcc = train_mfcc_normalized
             test_mfcc = test_mfcc_normalized
+            test_labels = y_test
+            
 
            
             
@@ -112,14 +117,19 @@ def preprocess_mimii_data(data_dir, output_dir):
             # Save cycles
             train_output_file = os.path.join(output_dir, f"{machine_type}_{machine_id}_train_cycles.pkl")
             test_output_file = os.path.join(output_dir, f"{machine_type}_{machine_id}_test_cycles.pkl")
+            test_labels_output_file = os.path.join(output_dir, f"{machine_type}_{machine_id}_test_labels.pkl")
 
             with open(train_output_file, "wb") as f:
                 pkl.dump(train_cycles, f)
             with open(test_output_file, "wb") as f:
                 pkl.dump(test_cycles, f)
+            with open(test_labels_output_file, "wb") as f:
+                pkl.dump(test_labels, f)
 
             print(f"Saved {len(train_cycles)} train cycles to {train_output_file}")
             print(f"Saved {len(test_cycles)} test cycles to {test_output_file}")
+            print(f"Saved {len(test_labels)} test labels to {test_labels_output_file}")
+           
 
 if __name__ == "__main__":
     data_directory = os.path.join(os.getcwd(),  "Data", "MIMII")  #"Data\MIMII"   Path to the MIMII dataset
